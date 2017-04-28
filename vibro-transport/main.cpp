@@ -32,6 +32,10 @@ int main()
         V x0( 2 );
         x0[0] = 1;
         auto sc = cfg.apply( set<unsigned int>(), 0, x0 );
+        auto vt = dynamic_cast<VibroTransport<VD>*>(sc.solver()->odeRhs().get());
+        ASSERT(vt);
+        vt->setDiscreteState(VibroTransport<VD>::F);
+        vt->computeDiscreteState( 0, x0 );
         solveOde( &cfg, &sc );
         return 0;
     }

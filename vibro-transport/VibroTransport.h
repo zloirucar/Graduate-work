@@ -16,7 +16,7 @@ class VibroTransport :
         typedef typename V::value_type real_type;
         typedef OptionalParameters::Parameters Parameters;
 
-        explicit VibroTransport()
+        explicit VibroTransport() : m_discreteState(F)
             {}
 
         virtual unsigned int secondOrderVarCount() const {
@@ -56,6 +56,24 @@ class VibroTransport :
         virtual std::string describeZeroFunction( unsigned int /*index*/ ) const {
             return std::string();
             }
+
+        enum DiscreteState { F, S, K };
+        DiscreteState discreteState() const {
+            return m_discreteState;
+            }
+        void setDiscreteState(DiscreteState discreteState) {
+            m_discreteState = discreteState;
+            }
+
+        void computeDiscreteState(double time, const V& state)
+            {
+            ASSERT(false);// TODO
+            m_discreteState = K;
+            }
+
+    private:
+
+        DiscreteState m_discreteState;
     };
 
 #endif // _VIBRO_TRANSPORT_H_
