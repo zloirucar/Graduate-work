@@ -20,11 +20,11 @@ class VibroTransport :
             {}
 
         virtual unsigned int secondOrderVarCount() const {
-            return 1;
+            return 0;
             }
 
         virtual unsigned int firstOrderVarCount() const {
-            return 3;
+            return 4;
             }
 
         virtual void rhs( V& dst, real_type time, const V& x ) const
@@ -92,7 +92,7 @@ class VibroTransport :
 			};
 
 		virtual std::vector<unsigned int> zeroFuncFlags() const {
-			return std::vector<unsigned int>(1, OdeRhs<VD>::BothDirections);
+			return std::vector<unsigned int>(1, OdeRhs<VD>::PlusMinus);
 		}
 
 
