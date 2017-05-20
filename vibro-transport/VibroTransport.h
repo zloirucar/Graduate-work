@@ -75,7 +75,7 @@ class VibroTransport :
 			switch (m_discreteState) {
 			case F:
 				dst[0] = x[1];
-				dst[1] = 15;
+				dst[1] = x[1];
 				break;
 			case S:
 				computeReactions_S(N, R, time, x);
@@ -92,8 +92,9 @@ class VibroTransport :
 			};
 
 		virtual std::vector<unsigned int> zeroFuncFlags() const {
-			return std::vector<unsigned int>(1, OdeRhs<VD>::PlusMinus);
-		}
+		return std::vector<unsigned int>(2, OdeRhs<VD>::PlusMinus);
+		};
+
 
 
         virtual void switchPhaseState( int* transitions, real_type /*time*/, V& x ) {
@@ -103,10 +104,8 @@ class VibroTransport :
 					x[3] *= -y_method(); //  нормальный удар
 					x_method(x); // удар по касательной
 					transitions[0] = 1;
+					transitions[1] = 1;
 					};
-
-				
-
 				}
 			
 			ASSERT(false); //TODO
