@@ -20,11 +20,11 @@ class VibroTransport :
             {}
 
         virtual unsigned int secondOrderVarCount() const {
-            return 0;
+            return 2;
             }
 
         virtual unsigned int firstOrderVarCount() const {
-            return 4;
+            return 0;
             }
 
         virtual void rhs( V& dst, real_type time, const V& x ) const
@@ -51,7 +51,7 @@ class VibroTransport :
                 case K:
 					real_type N, R,R0;
 					computeReactions_K(N, R,R0, time, x);
-					dst[0] = x[2];
+					dst[0] = 0;
 					dst[1] = x[3];
 					dst[2] = -g*sin(m_alf) + R + sqr(m_ow)*A*sin(m_ow*time);
 					dst[3] = -g*cos(m_alf) + N + sqr(m_ow)*B*sin(m_ow*time + m_Eps);
@@ -70,12 +70,12 @@ class VibroTransport :
 
         virtual void zeroFunctions( V& dst, real_type time, const V& x ) const
             {
-			real_type N, R,R0;
+			real_type N, R, R0;
 			dst.resize(2);
 			switch (m_discreteState) {
 			case F:
 				dst[0] = x[1];
-				dst[1] = x[1];
+				dst[1] = 1;
 				break;
 			case S:
 				computeReactions_S(N, R, time, x);
@@ -91,26 +91,54 @@ class VibroTransport :
 
 			};
 
+
 		virtual std::vector<unsigned int> zeroFuncFlags() const {
-		return std::vector<unsigned int>(2, OdeRhs<VD>::PlusMinus);
+			return std::vector<unsigned int>(2, OdeRhs<VD>::Discontinuous | OdeRhs<VD>::BothDirections);
 		};
 
 
-
-        virtual void switchPhaseState( int* transitions, real_type /*time*/, V& x ) {
+        virtual void switchPhaseState( int* transitions, real_type time, V& x ) {
+			real_type N, R, R0;
 			switch (m_discreteState) {
 			case F:
-				if (x[3]<0) { 
+				ASSERT(transitions[0] != 0);
+				if (x[3] < 0) {
 					x[3] *= -y_method(); //  нормальный удар
 					x_method(x); // удар по касательной
 					transitions[0] = 1;
-					transitions[1] = 1;
-					};
+					if (fabs(x[3]) < min_speed) {
+						x[1] = 0;
+						x[3] = 0;
+						m_discreteState = S;
+					}
+				} 
+				break;
+			case S:	
+				computeReactions_K(N, R, R0,time,x);
+				if (R < R0) {
+					x[2] = 0;
+					m_discreteState = K;
+				} 
+				else if (N < 0) {
+					m_discreteState = F;
+				};
+				break;
+			case K:
+				computeReactions_K(N, R, R0, time, x);
+				if (R > R0){
+					m_discreteState = S;
 				}
+				else if (N < 0) {
+					m_discreteState = F;
+				}
+				
+				break;
+			default:
+				ASSERT(false); // Unreachable
+			}
 			
-			ASSERT(false); //TODO
-			
-            }
+		}
+
         virtual std::string describeZeroFunction( unsigned int /*index*/ ) const {
             return std::string();
             }
@@ -125,34 +153,16 @@ class VibroTransport :
 
 		void computeDiscreteState(double time, const V& state)
 		{
-			real_type N, R,R0;
-			switch (m_discreteState) {
-			case F:
-				if (state[3] < 0) {
-					m_discreteState = S;
+				if (state[1] == 0 && state[2] == 0) {
+					m_discreteState = K;
+				}
+				else if (state [1]==0 && state[2] !=0) {
+				m_discreteState = S;
 				}
 				else m_discreteState = F;
-			case S:
-				computeReactions_S(N, R, time, state);
-					if (N < 0) {
-						m_discreteState = F;
-					}
-					else if (state[2] < pow(1, -10)) {
-						m_discreteState = K;
-					}
-					else m_discreteState = S;
-			case K:
-				computeReactions_K(N, R, R0, time, state);
-				if (N < 0) {
-					m_discreteState = F;
-				}
-				else if (R > R0) {
-					m_discreteState = S;
-				}
-				else m_discreteState = K;
-
-			};
-		};
+			
+			}
+		
           
 
     private:
@@ -161,18 +171,18 @@ class VibroTransport :
 
 		//Объявление переменных
 		const real_type g = 9.8;
-		const real_type m_alf = 10; // угол наклона поверхности
+		const real_type m_alf = 3.14/6; // угол наклона поверхности
 		const real_type m_ow = 1; // частота колебаний
 		const real_type m_f = 0.8; // трение тела о лоток
 		const real_type m_mass = 1; //масса т.т.
 		const real_type A = 2;//Амплитуда по х
 		const real_type B = 4;//Амлитуда по y
 		const real_type m_Eps = 0.5;//смещение фазы
-
+		const real_type min_speed = 1; // минимальная скорость для отскока
         template< class T >
         static T sqr( T x ) {
             return x*x;
-            }
+		};
 
 
         void computeReactions_S(real_type& N, real_type& R, real_type time, const V& x) const
@@ -185,7 +195,7 @@ class VibroTransport :
 			N = m_mass*g*cos(m_alf) - m_mass*sqr(m_ow)*B*cos(m_ow*time + m_Eps);
 			R = m_mass*g*sin(m_alf) - m_mass*sqr(m_ow)*A*sin(m_ow*time);
 			R0 = m_mass*g*sin(m_alf);//TODO
-            }
+		};
    
 
 	real_type y_method() {
