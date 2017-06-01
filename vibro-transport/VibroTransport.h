@@ -106,17 +106,19 @@ class VibroTransport :
 					if (x[3] < 0) {
 						x[3] *= -y_method(); //  нормальный удар
 						x_method(x); // удар по касательной
+						x[1] = 0;
 						transitions[0] = 1;
-						if (fabs(x[3]) < min_speed) {
-							x[1] = 0;
-							x[3] = 0;
-							m_discreteState = S;
-						}
+					}
+					else transitions[0] = 1;
+					if (fabs(x[3]) < min_speed) {
+						x[1] = 0;
+						x[3] = 0;
+						m_discreteState = S;
 					}
 					break;
 				case S:
 					computeReactions_K(N, R, R0, time, x);
-					if (R < R0) {
+					if (R0 < fabs(R)) {
 						x[2] = 0;
 						m_discreteState = K;
 					}
@@ -130,6 +132,8 @@ class VibroTransport :
 						m_discreteState = S;
 					}
 					else if (N < 0) {
+						x[1] = 0;
+						x[3] = 0;
 						m_discreteState = F;
 					}
 
@@ -180,7 +184,7 @@ class VibroTransport :
 		const real_type A = 2;//Амплитуда по х
 		const real_type B = 4;//Амлитуда по y
 		const real_type m_Eps = 0.5;//смещение фазы
-		const real_type min_speed = 1; // минимальная скорость для отскока
+		const real_type min_speed = 0.05; // минимальная скорость для отскока
 		template< class T >
 		static T sqr(T x) {
 			return x*x;
@@ -208,7 +212,7 @@ class VibroTransport :
 				R = m_f*N;
 			};
 
-			R0 = m_mass*g*sin(m_alf) - m_mass*sqr(m_ow)*B*sin(m_ow*time);
+			R0 = m_mass*g*sin(m_alf) - m_mass*sqr(m_ow)*A*sin(m_ow*time);
 		};
    
 
