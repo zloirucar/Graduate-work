@@ -100,6 +100,7 @@ class VibroTransport :
 
 			virtual void switchPhaseState(int* transitions, real_type time, V& x) {
 				real_type N, R, R0;
+				computeReactions_K(N, R, R0, time, x);
 				switch (m_discreteState) {
 				case F:
 					ASSERT(transitions[0] != 0);
@@ -121,19 +122,18 @@ class VibroTransport :
 					}
 					break;
 				case S:
-					computeReactions_K(N, R, R0, time, x);
-					if (fabs(R0) < fabs(R)) {
+						if (fabs(R0) < fabs(R)) {
 						x[2] = 0;
 						x[1] = 0;
 						x[3] = 0;
 						m_discreteState = K;
 					};
 					    if (N < 0) {
+						transitions[0] = Sgn(N);
 						m_discreteState = F;
 					};
 					break;
 				case K:
-					computeReactions_K(N, R, R0, time, x);
 					if (fabs(R) < fabs(R0) ) {
 						x[3] = 0;
 						x[1] = 0;
@@ -142,6 +142,7 @@ class VibroTransport :
 					if (N < 0) {
 						x[1] = 0;
 						x[3] = 0;
+						transitions[0] = Sgn(N);
 						m_discreteState = F;
 					}
 
@@ -167,23 +168,19 @@ class VibroTransport :
 			void computeDiscreteState(double time, const V& state)
 			{
 				real_type N, R, R0;
+				computeReactions_K(N, R, R0, time, state);
 				if (state[1] == 0 && state[2] == 0) {
-					computeReactions_K(N, R, R0, time, state);
 					if (N < 0) {
 						m_discreteState = F;
-					}
-					else m_discreteState = K;
-				}
+					} else m_discreteState = K;
+				} 
 
 				else if (state[1] == 0 && state[2] != 0) {
-
-					computeReactions_K(N, R, R0, time, state);
 					if (N < 0) {
 						m_discreteState = F;
-					}
-					else m_discreteState = S;
-					}
-				
+					} else m_discreteState = S; 
+				}
+		
 				else m_discreteState = F;
 
 				}
@@ -226,7 +223,8 @@ class VibroTransport :
 
         void computeReactions_K(real_type& N, real_type& R,real_type& R0, real_type time, const V& x) const
             {
-			N = m_mass*g*cos(m_alf) - m_mass*sqr(m_ow)*B*cos(m_ow*time + m_Eps);
+			N = m_mass*g*cos(m_alf) - m_mass*sqr(m_ow)*B*sin(m_ow*time + m_Eps);
+			
 			if (x[2] > 0) {
 				R = -m_f*N;
 			}
@@ -247,6 +245,7 @@ class VibroTransport :
 	};
 
 	void x_method(V& x)  {
+		
 		real_type lam;
 		lam = m_f; //Иногда принмают как коэф трения скольжения
 		if (fabs(x[2]) < fabs(m_f*(y_method()*x[3] - x[3]) / lam)) {
