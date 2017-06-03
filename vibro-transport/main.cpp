@@ -27,12 +27,12 @@ int main()
         cfg.setValue("rhs", "VibroTransport");
         cfg.setValue("output_con", "con_solution");
         cfg.setValue("solver", "dopri_56");
-        cfg.setValue("solver.stepsizectl.tolerance", 1e-12);
-        cfg.setValue("time", 10);
+        cfg.setValue("solver.stepsizectl.tolerance", 1e-2);
+        cfg.setValue("time", 2);
         V x0( 4 );
         x0[0] = 0;
-		x0[1] = 0.5;
-		x0[2] = 0;
+		x0[1] = 0;
+		x0[2] = 2;
 		x0[3] = 0;
         auto sc = cfg.apply( set<unsigned int>(), 0, x0 );
         auto vt = dynamic_cast<VibroTransport<VD>*>(sc.solver()->odeRhs().get());

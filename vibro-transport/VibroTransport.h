@@ -31,16 +31,17 @@ class VibroTransport :
             {
             this->odeRhsPreObservers( time, x, this );
 			dst.resize(4);
+			real_type N;
+			real_type R,R0;
             switch (m_discreteState) {
                 case F:
 					dst[0] = x[2];
 					dst[1] = x[3];
-					dst[2] = -g*sin(m_alf)+sqr(m_ow)*A*sin(m_ow*time);
-					dst[3] = -g*cos(m_alf)+sqr(m_ow)*B*sin(m_ow*time+m_Eps);
+					dst[2] = -g*sin(m_alf) + sqr(m_ow)*A*sin(m_ow*time);
+					dst[3] = -g*cos(m_alf) + sqr(m_ow)*B*sin(m_ow*time+m_Eps);
                     break;
                 case S:
                     {
-                    real_type N, R;
                     computeReactions_S(N, R, time, x);
 					dst[0] = x[2];
 					dst[1] = x[3];
@@ -49,7 +50,6 @@ class VibroTransport :
 				    break;
                     }
                 case K:
-					real_type N, R,R0;
 					computeReactions_K(N, R,R0, time, x);
 					dst[0] = x[2];
 					dst[1] = x[3];
@@ -104,12 +104,16 @@ class VibroTransport :
 				case F:
 					ASSERT(transitions[0] != 0);
 					if (x[3] < 0) {
-						x[3] *= -y_method(); //  нормальный удар
 						x_method(x); // удар по касательной
+						x[3] *= -y_method(); //  нормальный удар
 						x[1] = 0;
 						transitions[0] = 1;
 					}
-					else transitions[0] = 1;
+					else {
+						x_method(x); // удар по касательной
+						x[3] *= y_method();
+						transitions[0] = 1;
+					};
 					if (fabs(x[3]) < min_speed) {
 						x[1] = 0;
 						x[3] = 0;
@@ -118,20 +122,24 @@ class VibroTransport :
 					break;
 				case S:
 					computeReactions_K(N, R, R0, time, x);
-					if (R0 < fabs(R)) {
+					if (fabs(R0) < fabs(R)) {
 						x[2] = 0;
+						x[1] = 0;
+						x[3] = 0;
 						m_discreteState = K;
-					}
-					else if (N < 0) {
+					};
+					    if (N < 0) {
 						m_discreteState = F;
 					};
 					break;
 				case K:
 					computeReactions_K(N, R, R0, time, x);
-					if (R > R0) {
+					if (fabs(R) < fabs(R0) ) {
+						x[3] = 0;
+						x[1] = 0;
 						m_discreteState = S;
-					}
-					else if (N < 0) {
+					};
+					if (N < 0) {
 						x[1] = 0;
 						x[3] = 0;
 						m_discreteState = F;
@@ -158,15 +166,28 @@ class VibroTransport :
 
 			void computeDiscreteState(double time, const V& state)
 			{
+				real_type N, R, R0;
 				if (state[1] == 0 && state[2] == 0) {
-					m_discreteState = K;
+					computeReactions_K(N, R, R0, time, state);
+					if (N < 0) {
+						m_discreteState = F;
+					}
+					else m_discreteState = K;
 				}
+
 				else if (state[1] == 0 && state[2] != 0) {
-					m_discreteState = S;
-				}
+
+					computeReactions_K(N, R, R0, time, state);
+					if (N < 0) {
+						m_discreteState = F;
+					}
+					else m_discreteState = S;
+					}
+				
 				else m_discreteState = F;
 
-			}
+				}
+			
 
 
 
@@ -177,14 +198,15 @@ class VibroTransport :
 		//Объявление переменных
 		const real_type g = 9.8;
 		const real_type m_alf = 3.14 / 6; // угол наклона поверхности
-		const real_type m_ow = 1.5; // частота колебаний
-		const real_type m_f0 = 1;//Сила трения покоя
+		const real_type m_ow =5; // частота колебаний
 		const real_type m_f = 0.8; // трение тела о лоток
 		const real_type m_mass = 1; //масса т.т.
 		const real_type A = 2;//Амплитуда по х
 		const real_type B = 4;//Амлитуда по y
 		const real_type m_Eps = 0.5;//смещение фазы
 		const real_type min_speed = 0.05; // минимальная скорость для отскока
+		
+		
 		template< class T >
 		static T sqr(T x) {
 			return x*x;
@@ -194,7 +216,7 @@ class VibroTransport :
 		void computeReactions_S(real_type& N, real_type& R, real_type time, const V& x) const
 		{
 			N = m_mass*g*cos(m_alf) - m_mass*sqr(m_ow)*B*sin(m_ow*time + m_Eps);
-			if (Sgn(x[2]) > 0) {
+			if (x[2] > 0) {
 				R = -m_f*N;
 			}
 			else {
@@ -205,7 +227,7 @@ class VibroTransport :
         void computeReactions_K(real_type& N, real_type& R,real_type& R0, real_type time, const V& x) const
             {
 			N = m_mass*g*cos(m_alf) - m_mass*sqr(m_ow)*B*cos(m_ow*time + m_Eps);
-			if (Sgn(x[2]) > 0) {
+			if (x[2] > 0) {
 				R = -m_f*N;
 			}
 			else {
