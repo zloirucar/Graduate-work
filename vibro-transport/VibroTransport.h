@@ -34,7 +34,7 @@ class VibroTransport :
 			real_type N;
 			real_type R,R0;
             switch (m_discreteState) {
-                case F:
+                case (F | F1):
 					dst[0] = x[2];
 					dst[1] = x[3];
 					dst[2] = -g*sin(m_alf) + sqr(m_ow)*A*sin(m_ow*time);
@@ -78,6 +78,10 @@ class VibroTransport :
 				dst[0] = x[1];
 				dst[1] = 1;
 				break;
+			case F1:
+				dst[0] = x[3]-min_speed;
+				dst[1] = 1;
+				break;
 			case S:
 				computeReactions_S(N, R, time, x);
 				dst[0] = N;
@@ -102,6 +106,10 @@ class VibroTransport :
 				real_type N, R, R0;
 				computeReactions_K(N, R, R0, time, x);
 				switch (m_discreteState) {
+				case F1:
+					transitions[0] = Sgn(N);
+					m_discreteState = F;
+					break;
 				case F:
 					ASSERT(transitions[0] != 0);
 					if (x[3] < 0) {
@@ -129,7 +137,6 @@ class VibroTransport :
 						m_discreteState = K;
 					};
 					    if (N < 0) {
-						transitions[0] = Sgn(N);
 						m_discreteState = F;
 					};
 					break;
@@ -142,8 +149,7 @@ class VibroTransport :
 					if (N < 0) {
 						x[1] = 0;
 						x[3] = 0;
-						transitions[0] = Sgn(N);
-						m_discreteState = F;
+						m_discreteState = F1;
 					}
 
 					break;
@@ -157,10 +163,11 @@ class VibroTransport :
 				return std::string();
 			}
 
-			enum DiscreteState { F, S, K };
+			enum DiscreteState { F, S, K, F1 };
 			DiscreteState discreteState() const {
 				return m_discreteState;
 			}
+
 			void setDiscreteState(DiscreteState discreteState) {
 				m_discreteState = discreteState;
 			}
@@ -170,15 +177,15 @@ class VibroTransport :
 				real_type N, R, R0;
 				computeReactions_K(N, R, R0, time, state);
 				if (state[1] == 0 && state[2] == 0) {
-					if (N < 0) {
+					/* (N < 0) {
 						m_discreteState = F;
-					} else m_discreteState = K;
+					} else*/ m_discreteState = K;
 				} 
 
 				else if (state[1] == 0 && state[2] != 0) {
-					if (N < 0) {
+					/*if (N < 0) {
 						m_discreteState = F;
-					} else m_discreteState = S; 
+					} else*/ m_discreteState = S; 
 				}
 		
 				else m_discreteState = F;
@@ -195,11 +202,11 @@ class VibroTransport :
 		//Объявление переменных
 		const real_type g = 9.8;
 		const real_type m_alf = 3.14 / 6; // угол наклона поверхности
-		const real_type m_ow =5; // частота колебаний
+		const real_type m_ow = 30; // частота колебаний
 		const real_type m_f = 0.8; // трение тела о лоток
 		const real_type m_mass = 1; //масса т.т.
-		const real_type A = 2;//Амплитуда по х
-		const real_type B = 4;//Амлитуда по y
+		const real_type A = 0.01;//Амплитуда по х
+		const real_type B = 0.05;//Амлитуда по y
 		const real_type m_Eps = 0.5;//смещение фазы
 		const real_type min_speed = 0.05; // минимальная скорость для отскока
 		
