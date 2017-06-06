@@ -34,12 +34,18 @@ class VibroTransport :
 			real_type N;
 			real_type R,R0;
             switch (m_discreteState) {
-                case (F | F1):
+                case F1:
 					dst[0] = x[2];
 					dst[1] = x[3];
 					dst[2] = -g*sin(m_alf) + sqr(m_ow)*A*sin(m_ow*time);
 					dst[3] = -g*cos(m_alf) + sqr(m_ow)*B*sin(m_ow*time+m_Eps);
                     break;
+				case F:
+					dst[0] = x[2];
+					dst[1] = x[3];
+					dst[2] = -g*sin(m_alf) + sqr(m_ow)*A*sin(m_ow*time);
+					dst[3] = -g*cos(m_alf) + sqr(m_ow)*B*sin(m_ow*time + m_Eps);
+					break;
                 case S:
                     {
                     computeReactions_S(N, R, time, x);
@@ -90,7 +96,7 @@ class VibroTransport :
 			case K:
 				computeReactions_K(N, R, R0, time, x);
 				dst[0] = N;
-				dst[1] = R;
+				dst[1] = R0-R;
 				break;
 			};
 
@@ -108,10 +114,10 @@ class VibroTransport :
 				switch (m_discreteState) {
 				case F1:
 					if (x[1] > 0) {
-						transitions[0] = Sgn(N);
+						transitions[0] = 1;
 						m_discreteState = F;
-					} else
-					m_discreteState = F;
+					} else 
+					m_discreteState = S;
 					break;
 				case F:
 					ASSERT(transitions[0] != 0);
@@ -205,7 +211,7 @@ class VibroTransport :
 		//Объявление переменных
 		const real_type g = 9.8;
 		const real_type m_alf = 3.14 / 6; // угол наклона поверхности
-		const real_type m_ow = 150; // частота колебаний
+		const real_type m_ow = 15; // частота колебаний
 		const real_type m_f = 0.8; // трение тела о лоток
 		const real_type m_mass = 1; //масса т.т.
 		const real_type A = 0.01;//Амплитуда по х

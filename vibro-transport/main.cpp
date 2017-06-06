@@ -27,7 +27,7 @@ int main()
         cfg.setValue("rhs", "VibroTransport");
         cfg.setValue("output_con", "con_solution");
         cfg.setValue("solver", "dopri_56");
-        cfg.setValue("solver.stepsizectl.tolerance", 1e-3);
+        cfg.setValue("solver.stepsizectl.tolerance", 1e-5);
         cfg.setValue("time", 10);
         V x0( 4 );
         x0[0] = 0;
