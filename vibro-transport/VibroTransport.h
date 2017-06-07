@@ -85,18 +85,19 @@ class VibroTransport :
 				dst[1] = 1;
 				break;
 			case F1:
-				dst[0] = x[3]-min_speed;
+				dst[0] = min_speed - x[3];
 				dst[1] = x[1];
 				break;
 			case S:
 				computeReactions_S(N, R, time, x);
 				dst[0] = N;
-				dst[1] = x[2];
+				dst[1] = R0-R
+;
 				break;
 			case K:
 				computeReactions_K(N, R, R0, time, x);
 				dst[0] = N;
-				dst[1] = R0-R;
+				dst[1] = R-R0;
 				break;
 			};
 
@@ -104,8 +105,11 @@ class VibroTransport :
 
 
 			virtual std::vector<unsigned int> zeroFuncFlags() const {
-				return std::vector<unsigned int>(2, OdeRhs<VD>::Discontinuous | OdeRhs<VD>::BothDirections);
-			};
+				return std::vector<unsigned int>{
+					OdeRhs<VD>::Discontinuous | OdeRhs<VD>::PlusMinus,
+					OdeRhs<VD>::Discontinuous | OdeRhs<VD>::BothDirections
+				};
+			}
 
 
 			virtual void switchPhaseState(int* transitions, real_type time, V& x) {
@@ -113,11 +117,15 @@ class VibroTransport :
 				computeReactions_K(N, R, R0, time, x);
 				switch (m_discreteState) {
 				case F1:
-					if (x[1] > 0 || N < 0 ) {
+					if (transitions[0] < 0) {
 						transitions[0] = 1;
 						m_discreteState = F;
-					} else 
-					m_discreteState = S;
+					};
+
+					if (transitions[1] < 0) {
+						transitions[1];
+						m_discreteState = S;
+					};
 					break;
 				case F:
 					ASSERT(transitions[0] != 0);
@@ -137,20 +145,24 @@ class VibroTransport :
 					}
 					break;
 				case S:
-					if (fabs(R0) < fabs(R)) {
+
+					if (transitions[1] < 0) {
 						x[2] = 0;
 						x[1] = 0;
 						m_discreteState = K;
+						transitions[1] = 1;
 					};
-					if (N < 0) {
+					if (transitions[0] < 0) {
 						x[1] = 0;
 						m_discreteState = F1;
+						transitions[0] = 1;
 					};
 					break;
 				case K:
-					if (fabs(R) < fabs(R0) ) {
+					if (transitions[1]<0 ) {
 						x[3] = 0;
 						m_discreteState = S;
+						transitions[1] = 1;
 					};
 					if (N < 0) {
 						x[1] = 0;
@@ -183,15 +195,16 @@ class VibroTransport :
 				real_type N, R, R0;
 				computeReactions_K(N, R, R0, time, state);
 				if (state[1] == 0 && state[2] == 0) {
-					/* (N < 0) {
-						m_discreteState = F;
-					} else*/ m_discreteState = K;
+					if (N < 0) {
+						m_discreteState = F1;
+					}
+					else m_discreteState = K;
 				} 
 
 				else if (state[1] == 0 && state[2] != 0) {
-					/*if (N < 0) {
-						m_discreteState = F;
-					} else*/ m_discreteState = S; 
+					if (N < 0) {
+						m_discreteState = F1;
+					} else m_discreteState = S; 
 				}
 		
 				else m_discreteState = F;
@@ -208,12 +221,12 @@ class VibroTransport :
 		//Объявление переменных
 		const real_type g = 9.8;
 		const real_type m_alf = 3.14 / 6; // угол наклона поверхности
-		const real_type m_ow = 50; // частота колебаний
+		const real_type m_ow = 150; // частота колебаний
 		const real_type m_f = 0.8; // трение тела о лоток
 		const real_type m_mass = 1; //масса т.т.
-		const real_type A = 0.01;//Амплитуда по х
-		const real_type B = 0.05;//Амлитуда по y
-		const real_type m_Eps = 0.5;//смещение фазы
+		const real_type A = 0.08;//Амплитуда по х
+		const real_type B = 0.02;//Амлитуда по y
+		const real_type m_Eps = 0.7;//смещение фазы
 		const real_type min_speed = 0.05; // минимальная скорость для отскока
 		
 		
@@ -268,7 +281,6 @@ class VibroTransport :
 			x[2] = x[2] - m_f*(y_method()*x[3] - x[3])*Sgn(x[2]);
 		};
 	}
-
 	};
 
 
