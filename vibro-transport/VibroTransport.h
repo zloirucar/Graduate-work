@@ -113,7 +113,7 @@ class VibroTransport :
 				computeReactions_K(N, R, R0, time, x);
 				switch (m_discreteState) {
 				case F1:
-					if (x[1] > 0) {
+					if (x[1] > 0 || N < 0 ) {
 						transitions[0] = 1;
 						m_discreteState = F;
 					} else 
@@ -128,8 +128,6 @@ class VibroTransport :
 						transitions[0] = 1;
 					}
 					else {
-						x_method(x); // удар по касательной
-						x[3] *= y_method();
 						transitions[0] = 1;
 					};
 					if (fabs(x[3]) < min_speed) {
@@ -139,20 +137,19 @@ class VibroTransport :
 					}
 					break;
 				case S:
-						if (fabs(R0) < fabs(R)) {
+					if (fabs(R0) < fabs(R)) {
 						x[2] = 0;
 						x[1] = 0;
-						x[3] = 0;
 						m_discreteState = K;
 					};
-					    if (N < 0) {
+					if (N < 0) {
+						x[1] = 0;
 						m_discreteState = F1;
 					};
 					break;
 				case K:
 					if (fabs(R) < fabs(R0) ) {
 						x[3] = 0;
-						x[1] = 0;
 						m_discreteState = S;
 					};
 					if (N < 0) {
@@ -211,7 +208,7 @@ class VibroTransport :
 		//Объявление переменных
 		const real_type g = 9.8;
 		const real_type m_alf = 3.14 / 6; // угол наклона поверхности
-		const real_type m_ow = 15; // частота колебаний
+		const real_type m_ow = 50; // частота колебаний
 		const real_type m_f = 0.8; // трение тела о лоток
 		const real_type m_mass = 1; //масса т.т.
 		const real_type A = 0.01;//Амплитуда по х
