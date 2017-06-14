@@ -29,8 +29,8 @@ int main()
 		//cfg.setValue("output_con.file_name", "myfile.txt");
 		cfg.setValue("output_timing", 0.1);
         cfg.setValue("solver", "dopri_56");
-        cfg.setValue("solver.stepsizectl.tolerance", 1e-2);
-        cfg.setValue("time", 20);
+        cfg.setValue("solver.stepsizectl.tolerance", 1e-3);
+        cfg.setValue("time", 50);
         V x0( 4 );
         x0[0] = 0;
 		x0[1] = 0;
@@ -41,7 +41,7 @@ int main()
         ASSERT(vt);
         vt->setDiscreteState(VibroTransport<VD>::F);
         vt->computeDiscreteState( 0, x0 );
-		auto dsName = [](VibroTransport<VD>::DiscreteState s) -> string {
+		/*auto dsName = [](VibroTransport<VD>::DiscreteState s) -> string {
 			const char *dsNames[] = { "F", "S", "K", "F1" };
 			return dsNames[s];
 		};
@@ -57,7 +57,7 @@ int main()
 			cout << counter << ": TRANSITION: " << arg.izfTrunc() << ":" << arg.transitionType() << ", "
 				<< dsName(rhs->discreteState()) << endl;
 
-		});
+		});*/
 
         solveOde( &cfg, &sc );
         return 0;

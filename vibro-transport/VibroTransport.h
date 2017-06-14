@@ -91,7 +91,6 @@ class VibroTransport :
 				dst[2] = min_speed - x[3];
 				break;
 			case S:
-				computeReactions_K(N, R, R0, time, x);
 				dst[0] = N;
 				dst[1] = x[2];
 				dst[2] = 1;
@@ -99,8 +98,8 @@ class VibroTransport :
 			case K:
 				computeReactions_K(N, R, R0, time, x);
 				dst[0] = N;
-				dst[1] = 1;
-				dst[2] = fabs(R) - fabs(R0);
+				dst[1] = fabs(R) - fabs(R0);
+				dst[2] = 1;
 				break;
 			};
 			
@@ -119,7 +118,6 @@ class VibroTransport :
 
 			virtual void switchPhaseState(int* transitions, real_type time, V& x) {
 				real_type N, R, R0;
-				computeReactions_K(N, R, R0, time, x);
 				switch (m_discreteState) {
 				case F1:
 					if (transitions[0] < 0) {
@@ -228,13 +226,13 @@ class VibroTransport :
 
 		//Объявление переменных
 		const real_type g = 9.8;
-		const real_type m_alf = 0.314;// угол наклона поверхности
-		const real_type m_ow = 60; // частота колебаний
-		const real_type m_f = 0.6; // трение тела о лоток
+		const real_type m_alf = 0.0785;// угол наклона поверхности
+		const real_type m_ow = 100; // частота колебаний
+		const real_type m_f = 0.4; // трение тела о лоток
 		const real_type m_mass = 1; //масса т.т.
-		const real_type A = 0.01;//Амплитуда по х
-		const real_type B = 0.003;//Амлитуда по y
-		const real_type m_Eps = -0.7;//смещение фазы
+		const real_type A = 0.0003;//Амплитуда по х
+		const real_type B = 0.0009;//Амлитуда по y
+		const real_type m_Eps = -0.5;//смещение фазы
 		const real_type min_speed = 0.05; // минимальная скорость для отскока
 		
 		
@@ -260,10 +258,10 @@ class VibroTransport :
 			N = m_mass*g*cos(m_alf) - m_mass*sqr(m_ow)*B*sin(m_ow*time + m_Eps);
 			
 			if (x[2] > 0) {
-				R = -m_f*N;
+				R = -m_f*N/0.7;
 			}
 			else {
-				R = m_f*N;
+				R = m_f*N/0.7;
 			};
 
 			R0 = m_mass*g*sin(m_alf) - m_mass*sqr(m_ow)*A*sin(m_ow*time);
