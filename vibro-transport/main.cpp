@@ -27,7 +27,8 @@ int main()
         cfg.setValue("rhs", "VibroTransport");
         cfg.setValue("output_con", "con_solution");
         cfg.setValue("solver", "dopri_56");
-        cfg.setValue("solver.stepsizectl.tolerance", 1e-5);
+        cfg.setValue("solver.stepsizectl.tolerance", 1e-6);
+        cfg.setValue("solver.h_init", 0.001);
         cfg.setValue("time", 10);
         cfg.setValue("output_timing", 0.1);
         V x0( 4 );
@@ -41,7 +42,7 @@ int main()
         vt->setDiscreteState(VibroTransport<VD>::F);
         vt->computeDiscreteState( 0, x0 );
         auto stateName = [&vt]() -> string {
-            const char *stateNames[] = { "F", "SL", "SR", "K", "F1" };
+            const char *stateNames[] = { "F", "SL", "SR", "K" };
             return stateNames[vt->discreteState()];
         };
         cout << "INITIAL DISCRETE STATE: " << stateName() << endl;

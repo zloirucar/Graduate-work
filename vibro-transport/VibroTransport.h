@@ -33,7 +33,6 @@ class VibroTransport :
             this->odeRhsPreObservers( time, x, this );
 			dst.resize(4);
             switch (m_discreteState) {
-                case F1:
                 case F:
 					dst[0] = x[2];
 					dst[1] = x[3];
@@ -69,16 +68,11 @@ class VibroTransport :
 
         virtual void zeroFunctions( V& dst, real_type time, const V& x ) const
             {
-			real_type N, R, R0;
 			dst.resize(2);
 			switch (m_discreteState) {
                 case F:
                     dst[0] = x[1];
                     dst[1] = 1;
-                    break;
-                case F1:
-                    dst[0] = min_speed - x[3];
-                    dst[1] = x[1];
                     break;
                 case SL:
                     dst[0] = normalReaction(time, x);
@@ -105,14 +99,6 @@ class VibroTransport :
 
             virtual void switchPhaseState(const int* transitions, real_type time, V& x) {
 				switch (m_discreteState) {
-				case F1:
-                    if (transitions[0] != 0)
-                        m_discreteState = F;
-                    else {
-                        ASSERT(transitions[1] != 0);
-                        m_discreteState = x[0] >=0? SR: SL;
-                    }
-					break;
                 case F: {
 					ASSERT(transitions[0] != 0);
                     auto fallingDown = false;
@@ -122,7 +108,7 @@ class VibroTransport :
 						x[1] = 0;
                         fallingDown = true;
                     }
-                    if (!fallingDown   ||   fabs(x[3]) < min_speed) {
+                    if ((!fallingDown   ||   fabs(x[3]) < min_speed)   &&   normalReaction(time, x) > 0) {
 						x[1] = 0;
 						x[3] = 0;
                         m_discreteState = x[2] >= 0? SR: SL;
@@ -132,7 +118,7 @@ class VibroTransport :
                 case SL:
                 case SR:
                     if (transitions[0] != 0)
-                        m_discreteState = F1;
+                        m_discreteState = F;
                     else {
                         ASSERT(transitions[1] != 0);
                         auto N = normalReaction(time, x);
@@ -144,7 +130,7 @@ class VibroTransport :
 					break;
 				case K:
                     if (transitions[0] != 0)
-                        m_discreteState = F1;
+                        m_discreteState = F;
                     else {
                         ASSERT(transitions[1] != 0);
                         m_discreteState = stickingFrictionForce(time) >= 0? SL: SR;
@@ -159,7 +145,7 @@ class VibroTransport :
 				return std::string();
 			}
 
-            enum DiscreteState { F, SL, SR, K, F1 };
+            enum DiscreteState { F, SL, SR, K };
 			DiscreteState discreteState() const {
 				return m_discreteState;
 			}
@@ -196,18 +182,18 @@ class VibroTransport :
 
 		//Объявление переменных
 		const real_type g = 9.8;
-        const real_type m_alf = M_PI / 6; // угол наклона поверхности
-        const real_type m_ow = 30; // частота колебаний
-		const real_type m_f = 0.8; // трение тела о лоток
-		const real_type m_mass = 1; //масса т.т.
-        const real_type A = 0.01;//Амплитуда по х
-        const real_type B = 0.01;//Амлитуда по y
-        const real_type m_Eps = 0.5*M_PI;//смещение фазы
-        const real_type min_speed = 1e-4; // минимальная скорость для отскока
+        const real_type m_alf = 10*M_PI/180;        // угол наклона поверхности
+        const real_type m_ow = 16*2*M_PI;           // частота колебаний
+        const real_type m_f = 0.8;                  // трение тела о лоток
+        const real_type m_mass = 1;                 // масса т.т.
+        const real_type A = 0.01;                   // Амплитуда по х
+        const real_type B = 1.3*g / sqr(m_ow);      // Амлитуда по y
+        const real_type m_Eps = -0.35*M_PI;         // смещение фазы
+        const real_type min_speed = 1e-4;           // минимальная скорость для отскока
 		
 		
 		template< class T >
-		static T sqr(T x) {
+        static T sqr(T x) {
 			return x*x;
         }
 
