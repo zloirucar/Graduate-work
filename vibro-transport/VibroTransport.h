@@ -85,7 +85,7 @@ class VibroTransport :
                 case K: {
                     auto N = normalReaction(time, x);
                     dst[0] = N;
-                    dst[1] = slidingFrictionForceNorm(N) - fabs(stickingFrictionForce(time));
+                    dst[1] = staticFrictionForceNorm(N) - fabs(stickingFrictionForce(time));
                     break;
                     }
                 }
@@ -122,7 +122,7 @@ class VibroTransport :
                     else {
                         ASSERT(transitions[1] != 0);
                         auto N = normalReaction(time, x);
-                        if (fabs(stickingFrictionForce(time)) < slidingFrictionForceNorm(N))
+                        if (fabs(stickingFrictionForce(time)) < staticFrictionForceNorm(N))
                             m_discreteState = K;
                         else
                             m_discreteState = m_discreteState == SL? SR: SL;
@@ -181,21 +181,24 @@ class VibroTransport :
 		DiscreteState m_discreteState;
 
 		//Объявление переменных
-		const real_type g = 9.8;
-        const real_type m_alf = 10*M_PI/180;        // угол наклона поверхности
-        const real_type m_ow = 16*2*M_PI;           // частота колебаний
-        const real_type m_f = 0.8;                  // трение тела о лоток
-        const real_type m_mass = 1;                 // масса т.т.
-        const real_type A = 0.01;                   // Амплитуда по х
-        const real_type B = 1.3*g / sqr(m_ow);      // Амлитуда по y
-        const real_type m_Eps = -0.35*M_PI;         // смещение фазы
-        const real_type min_speed = 1e-4;           // минимальная скорость для отскока
+		const real_type g = 9.81;
+		const real_type m_alf = 0*10* M_PI / 180;        // угол наклона поверхности
+		const real_type m_ow = 100;           // частота колебаний
+		const real_type m_f = 0.7;             // трение тела о лоток
+		const real_type m_f0 = 1;             // трение покоя тела о лоток
+		const real_type m_mass = 1;                 // масса т.т.
+		const real_type A = 0.0009;      // Амплитуда по х
+		const real_type B = 0.0009;     // Амлитуда по y
+		const real_type m_Eps = -M_PI/2;         // смещение фазы
+		const real_type min_speed = 1e-4;           // минимальная скорость для отскока
 		
 		
 		template< class T >
         static T sqr(T x) {
 			return x*x;
         }
+		
+
 
         template< class T >
         static T sgn(T x) {
@@ -212,12 +215,16 @@ class VibroTransport :
             return m_f * fabs(normalReaction);
         }
 
+		real_type staticFrictionForceNorm(real_type normalReaction) const {
+			return m_f0 * fabs(normalReaction);
+		}
+
         real_type stickingFrictionForce(real_type time) const {
             return m_mass*g*sin(m_alf) - m_mass*sqr(m_ow)*A*sin(m_ow*time);
         }
 
         real_type y_method() const {
-            real_type R=0.8;
+            real_type R=0.3;
             // Здесь будет метод вычисления коэфициента восстановления
             // TODO
             return R;

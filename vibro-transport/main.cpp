@@ -26,10 +26,11 @@ int main()
         OdeSolverConfiguration<VD> cfg;
         cfg.setValue("rhs", "VibroTransport");
         cfg.setValue("output_con", "con_solution");
+		cfg.setValue("output_con.file_name", "myfile.txt");
         cfg.setValue("solver", "dopri_56");
-        cfg.setValue("solver.stepsizectl.tolerance", 1e-6);
+        cfg.setValue("solver.stepsizectl.tolerance", 1e-3);
         cfg.setValue("solver.h_init", 0.001);
-        cfg.setValue("time", 10);
+        cfg.setValue("time", 60);
         cfg.setValue("output_timing", 0.1);
         V x0( 4 );
         x0[0] = 0;
