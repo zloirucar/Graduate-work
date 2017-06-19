@@ -176,13 +176,20 @@ class VibroTransport :
                     }
             }
 
+        real_type alpha() const {
+            return m_alf;
+            }
+        void setAlpha(real_type alpha) {
+            m_alf = alpha;
+            }
+
 	private:
 
 		DiscreteState m_discreteState;
 
 		//Объявление переменных
 		const real_type g = 9.81;
-		const real_type m_alf = 0*10* M_PI / 180;        // угол наклона поверхности
+        real_type m_alf = M_PI / 6;        // угол наклона поверхности
 		const real_type m_ow = 100;           // частота колебаний
 		const real_type m_f = 0.7;             // трение тела о лоток
 		const real_type m_f0 = 1;             // трение покоя тела о лоток
