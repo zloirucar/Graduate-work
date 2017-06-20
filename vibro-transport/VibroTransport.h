@@ -183,6 +183,20 @@ class VibroTransport :
             m_alf = alpha;
             }
 
+        real_type amp_A() const {
+            return A;
+            }
+        void setA(real_type amp_A) {
+            A = amp_A;
+            }
+
+        real_type ow() const {
+            return m_ow;
+            }
+        void setow(real_type ow) {
+            m_ow = ow;
+            }
+
 	private:
 
 		DiscreteState m_discreteState;
@@ -190,13 +204,13 @@ class VibroTransport :
 		//Объявление переменных
 		const real_type g = 9.81;
         real_type m_alf = M_PI / 6;        // угол наклона поверхности
-		const real_type m_ow = 100;           // частота колебаний
+        real_type m_ow = 100;           // частота колебаний
 		const real_type m_f = 0.7;             // трение тела о лоток
 		const real_type m_f0 = 1;             // трение покоя тела о лоток
 		const real_type m_mass = 1;                 // масса т.т.
-		const real_type A = 0.0009;      // Амплитуда по х
-		const real_type B = 0.0009;     // Амлитуда по y
-		const real_type m_Eps = -M_PI/2;         // смещение фазы
+        real_type A = 0;      // Амплитуда по х
+        const real_type B = 0.0009;     // Амлитуда по y
+        const real_type m_Eps = 0.35*M_PI/180;         // смещение фазы
 		const real_type min_speed = 1e-4;           // минимальная скорость для отскока
 		
 		

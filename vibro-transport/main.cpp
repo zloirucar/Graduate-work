@@ -36,6 +36,7 @@ class Average
             return s.str();
             }
 
+
     private:
         double m_v;
         int m_n;
@@ -110,23 +111,48 @@ int main(int argc, char *argv[])
         });
 
 
-        for (auto alpha = 0.0; alpha<M_PI/2 + 1e-4; alpha += M_PI/12) {
-            cout << "---- alpha = " << alpha << endl;
-            vt->setAlpha(alpha);
-            sc.solver()->setInitialState(0, x0);
-            vt->computeDiscreteState(0, x0);
-            v1 = Average();
-            v2 = Average();
-            solveOde( &cfg, &sc );
-            cout << "v1: " << v1.toString() << endl
-                 << "v2: " << v2.toString() << endl;
-            if (fabs(v1.average())*2 < -v2.average() && v2.average() < -4)
-                cout << "It's falling!!!" << endl;
-            cout << "----" << endl;
-            }
+//        for (auto alpha = 0.0; alpha<M_PI/2 + 1e-4; alpha += M_PI/12) {
+//            cout << "---- alpha = " << alpha << endl;
+//            vt->setAlpha(alpha);
+//            sc.solver()->setInitialState(0, x0);
+//            vt->computeDiscreteState(0, x0);
+//            v1 = Average();
+//            v2 = Average();
+//            solveOde( &cfg, &sc );
+//            cout << "v1: " << v1.toString() << endl
+//                 << "v2: " << v2.toString() << endl;
+//            if (fabs(v1.average())*2 < -v2.average() && v2.average() < -4)
+//                cout << "It's falling!!!" << endl;
+//            cout << "----" << endl;
+//            }
 
-        QApplication a(argc, argv);
-        QImage img(800, 600, QImage::Format_ARGB32);
+        int ind = 20;
+        double V[ind][ind];
+        double max = V[0][0];
+        double min = V[0][0];
+
+        for(int i=0; i<ind;i++){
+            for(int j=0;j<ind;j++){
+                vt->setAlpha(10*M_PI/180);
+                vt->setA(-ind/2+j);
+                vt->setow(ind+j);
+                sc.solver()->setInitialState(0,x0);
+                vt->computeDiscreteState(0, x0);
+                v1 = Average();
+                v2 = Average();
+                solveOde( &cfg, &sc );
+                V[i][j] = std::stod(v2.toString());
+                if (V[i][j]>max) max = V[i][j];
+                if (V[i][j]<min) min = V[i][j];
+            }
+        };
+
+       ;
+
+		  QApplication a(argc, argv);
+          QImage img(800, 600, QImage::Format_ARGB32);
+          QImage("picture","jpg");
+
 
         return 0;
     }
