@@ -8,6 +8,8 @@
 
 #include <QApplication>
 #include <QImage>
+#include <QPainter>
+#include <qmath.h>
 
 //namespace ctm {
 //CTM_DECL_IMPLEMENTATION_TEMPLATE_TRAITS( VibroTransport, "VibroTransport" )
@@ -126,7 +128,7 @@ int main(int argc, char *argv[])
 //            cout << "----" << endl;
 //            }
 
-        int ind = 20;
+        int ind = 40;
         double V[ind][ind];
         double max = V[0][0];
         double min = V[0][0];
@@ -134,25 +136,34 @@ int main(int argc, char *argv[])
         for(int i=0; i<ind;i++){
             for(int j=0;j<ind;j++){
                 vt->setAlpha(10*M_PI/180);
-                vt->setA(-ind/2+j);
-                vt->setow(ind+j);
+                vt->setA(-ind/1000+0.001*i);
+                vt->setow(j);
                 sc.solver()->setInitialState(0,x0);
                 vt->computeDiscreteState(0, x0);
                 v1 = Average();
                 v2 = Average();
                 solveOde( &cfg, &sc );
-                V[i][j] = std::stod(v2.toString());
+                V[i][j] = v2.average();
                 if (V[i][j]>max) max = V[i][j];
                 if (V[i][j]<min) min = V[i][j];
+                cout << "v2: " << v2.toString()<<"  i= "<< i << "  j = "<< j << endl;
             }
         };
 
-       ;
+
 
 		  QApplication a(argc, argv);
-          QImage img(800, 600, QImage::Format_ARGB32);
-          QImage("picture","jpg");
-
+          QImage img(ind, ind, QImage::Format_ARGB32);
+          QPainter painter;
+          QRgb rgb;
+          for(int i=0; i<ind;i++){
+              for(int j=0;j<ind;j++){
+                rgb= qRgb(255/(abs(max)+abs(min))*(V[i][j]+min),0,0);
+                img.setPixel(i,j,rgb);
+              }
+          }
+          painter.drawImage(0,0,img);
+          img.save ("picture.jpg","jpg");
 
         return 0;
     }
