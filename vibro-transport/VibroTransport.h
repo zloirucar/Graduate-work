@@ -190,11 +190,26 @@ class VibroTransport :
             A = amp_A;
             }
 
+        real_type amp_B() const {
+            return B;
+            }
+        void setB(real_type amp_B) {
+            B = amp_B;
+            }
+
         real_type ow() const {
             return m_ow;
             }
         void setow(real_type ow) {
             m_ow = ow;
+            }
+
+        real_type eps() const {
+            return m_Eps;
+            }
+
+        void setEps(real_type eps) {
+            m_Eps = eps;
             }
 
 	private:
@@ -209,8 +224,8 @@ class VibroTransport :
 		const real_type m_f0 = 1;             // трение покоя тела о лоток
 		const real_type m_mass = 1;                 // масса т.т.
         real_type A = 0;      // Амплитуда по х
-        const real_type B = 0.0009;     // Амлитуда по y
-        const real_type m_Eps = 0.35*M_PI/180;         // смещение фазы
+        real_type B = 0.0009;     // Амлитуда по y
+        real_type m_Eps = 0.35*M_PI/180;         // смещение фазы
 		const real_type min_speed = 1e-4;           // минимальная скорость для отскока
 		
 		
