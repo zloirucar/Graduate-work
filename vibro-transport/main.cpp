@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QColor>
 #include <QTime>
+#include <QPainter>
 #include <qmath.h>
 
 //namespace ctm {
@@ -175,8 +176,36 @@ class VtIndexedParameterSetter
         IndexedRange m_r2;
     };
 
+void saveScaleImage(double min, double max)
+    {
+    int H = 50, W = 300;
+    IndexedRange rc(0, 5./6, W);
+    QImage img(W, H, QImage::Format_RGB32);
+    img.fill(Qt::white);
+        {
+        QPainter p(&img);
+        auto h = p.boundingRect(QRect(0,0,W,H), "X").height() + 5;
+        for (int x=0; x<W; ++x)
+            p.fillRect(QRect(x,0,1,H-h), QColor::fromHsvF(rc[x], 1, 1));
+        if (min < 0 && max > 0) {
+            int x = static_cast<int>((0-min)/(max-min)*W);
+            p.fillRect(QRect(x,0,1,H-h+2), Qt::black);
+            p.drawText(QRectF(x-20,H-h+5,40,h-5), Qt::AlignCenter, "0");
+            }
+
+        p.drawText(QRectF(0,H-h+5,W,h-5), Qt::AlignLeft | Qt::AlignVCenter, QString::number(min));
+        p.drawText(QRectF(0,H-h+5,W,h-5), Qt::AlignRight | Qt::AlignVCenter, QString::number(max));
+        }
+    img.save("scale.png");
+    }
+
 int main(int argc, char *argv[])
     {
+    QApplication app(argc, argv);
+    setlocale( LC_NUMERIC, "C" );
+//    saveScaleImage(-3.99932, 0.157367);
+//    return 0;
+
     using namespace std;
     using namespace ctm;
     using namespace math;
@@ -275,7 +304,7 @@ int main(int argc, char *argv[])
         // Diagram x = beta, y = ba
         vt->setAlpha(10*M_PI/180);
         VtParameterSetter_ba_beta vtParSetter(
-                    0.01 // Большая полуось эллипса, по которому движется лоток
+                    0.0011 // Большая полуось эллипса, по которому движется лоток
                     );
         VtIndexedParameterSetter vtIndexedParSetter(
                     *vt, vtParSetter,
@@ -337,8 +366,6 @@ int main(int argc, char *argv[])
         }
 
 
-
-          QApplication app(argc, argv);
           QImage img(ind, ind, QImage::Format_ARGB32);
           for(int i=0; i<ind;i++){
               for(int j=0;j<ind;j++) {
@@ -364,6 +391,7 @@ int main(int argc, char *argv[])
             }
           }
           img.save ("picture.png");
+          saveScaleImage(min, max);
           cout << "==== min: " << min << ", max: " << max << endl;
 
         return 0;
