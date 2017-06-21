@@ -98,6 +98,83 @@ class DelayBasedOdeSolverCancel
         QTime m_time;
     };
 
+class VtParameterSetter
+    {
+    public:
+        typedef VectorData<double> VD;
+        typedef VibroTransport<VD> VT;
+        virtual void operator()(VT& vt, double p1, double p2) const = 0;
+    };
+
+class VtParameterSetter_ba_beta : public VtParameterSetter
+    {
+    public:
+        explicit VtParameterSetter_ba_beta(double a) : m_a(a) {}
+
+        void operator()(VT& vt, double p1, double p2) const override {
+            const auto& ba = p1;
+            const auto& beta = p2;
+            const auto& a = m_a;
+            auto b = a*ba;
+            auto sb = sin(beta);
+            auto cb = cos(beta);
+            auto r = sqrt(sqr(a*cb) + sqr(b*sb));
+            auto spsi = a*cb/r;
+            auto cpsi = b*sb/r;
+            auto A =     -a*spsi*cb - b*cpsi*sb;
+            auto Bcphi = -a*spsi*sb + b*cpsi*cb;
+            auto Bsphi =  a*cpsi*sb + b*spsi*cb;
+            auto B = sqrt(sqr(Bcphi) + sqr(Bsphi));
+            auto phi = atan2(Bsphi, Bcphi);
+            vt.setA(A);
+            vt.setB(B);
+            vt.setEps(phi);
+            }
+
+    private:
+        double m_a;
+    };
+
+class VtParameterSetter_alpha_B : public VtParameterSetter
+    {
+    public:
+        explicit VtParameterSetter_alpha_B(double A) : m_A(A) {}
+
+        void operator()(VT& vt, double p1, double p2) const override {
+            const auto& alpha = p1;
+            const auto& B = p2;
+            const auto& A = m_A;
+            vt.setAlpha(alpha);
+            vt.setA(A);
+            vt.setB(B);
+            }
+
+    private:
+        double m_A;
+    };
+
+class VtIndexedParameterSetter
+    {
+    public:
+        typedef VectorData<double> VD;
+        typedef VibroTransport<VD> VT;
+
+        VtIndexedParameterSetter(
+                VT& vt, VtParameterSetter& ps,
+                const IndexedRange& r1, const IndexedRange& r2) :
+            m_vt(vt), m_ps(ps), m_r1(r1), m_r2(r2) {}
+
+        void operator()(int i, int j) {
+            m_ps(m_vt, m_r1[i], m_r2[j]);
+            }
+
+    private:
+        VibroTransport<VD>& m_vt;
+        VtParameterSetter& m_ps;
+        IndexedRange m_r1;
+        IndexedRange m_r2;
+    };
+
 int main(int argc, char *argv[])
     {
     using namespace std;
@@ -185,7 +262,7 @@ int main(int argc, char *argv[])
 //            cout << "----" << endl;
 //            }
 
-        int ind = 40;
+        int ind = 100;
         vector<vector<double>> V(ind, vector<double>(ind));
         enum Status { Ok, SolverFailed, Accelerating };
         vector<vector<Status>> status(ind, vector<Status>(ind));
@@ -194,46 +271,37 @@ int main(int argc, char *argv[])
         bool hasMinMax = false;
 
         vt->setow(16*2*M_PI);
+
+        // Diagram x = beta, y = ba
         vt->setAlpha(10*M_PI/180);
+        VtParameterSetter_ba_beta vtParSetter(
+                    0.01 // Большая полуось эллипса, по которому движется лоток
+                    );
+        VtIndexedParameterSetter vtIndexedParSetter(
+                    *vt, vtParSetter,
+                    IndexedRange(-1, 1, ind),           // Отношение малой полуоси эллипса, по которому движется лоток, к его большой полуоси
+                    IndexedRange(-M_PI/2, M_PI/2, ind)  // Угол между большой полуосью эллипса и плоскостью лотка
+                    );
 
-        double a = 0.02;    // Большая полуось эллипса, по которому движется лоток
+//        // Diagram y = B, y = alpha
+//        vt->setAlpha(10*M_PI/180);
+//        vt->setEps(-M_PI/2);
+//        VtParameterSetter_alpha_B vtParSetter(
+//                    0.002                           // A
+//                    );
+//        VtIndexedParameterSetter vtIndexedParSetter(
+//                    *vt, vtParSetter,
+//                    IndexedRange(0, M_PI/2, ind),   // alpha
+//                    IndexedRange(0, 0.002, ind)     // B
+//                    );
 
-        // Отношение малой полуоси эллипса, по которому движется лоток, к его большой полуоси
-        IndexedRange baRange(-1, 1, ind);
-
-        // Угол между большой полуосью эллипса и плоскостью лотка
-        IndexedRange betaRange(-M_PI/2, M_PI/2, ind);
-
-        auto sqr = [](double x) -> double { return x*x; };
-
-        auto setParameters = [&vt, &a, &sqr](double ba, double beta) {
-            auto b = a*ba;
-            auto sb = sin(beta);
-            auto cb = cos(beta);
-            auto r = sqrt(sqr(a*cb) + sqr(b*sb));
-            auto spsi = a*cb/r;
-            auto cpsi = b*sb/r;
-            auto A =     -a*spsi*cb - b*cpsi*sb;
-            auto Bcphi = -a*spsi*sb + b*cpsi*cb;
-            auto Bsphi =  a*cpsi*sb + b*spsi*cb;
-            auto B = sqrt(sqr(Bcphi) + sqr(Bsphi));
-            auto phi = atan2(Bsphi, Bcphi);
-            vt->setA(A);
-            vt->setB(B);
-            vt->setEps(phi);
-            };
-
+        // Skip points that compute for more than one second
         DelayBasedOdeSolverCancel solverDelayCancel(sc.solver().get(), 1000);
 
         for(int i=0; i<ind;i++){
             cout << "line " << (i+1) << "/" << ind << ":\t";
             for(int j=0;j<ind;j++) {
-//                vt->setAlpha(10*M_PI/180);
-//                vt->setA(-ind/1000+0.001*i);
-//                vt->setow(j);
-                auto ba = baRange[i];
-                auto beta = betaRange[j];
-                setParameters(ba, beta);
+                vtIndexedParSetter(i, j);
                 sc.solver()->setInitialState(0,x0);
                 vt->computeDiscreteState(0, x0);
                 v1 = Average();
